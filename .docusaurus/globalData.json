@@ -1,0 +1,48 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "intro",
+          "docs": [
+            {
+              "id": "intro",
+              "path": "/docs/intro",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "Корпорации/Climawise",
+              "path": "/docs/Корпорации/Climawise",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "Общественные движения/Ну движение",
+              "path": "/docs/Общественные движения/Ну движение",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "Общественные движения/Свободная наука",
+              "path": "/docs/Общественные движения/Свободная наука",
+              "sidebar": "tutorialSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorialSidebar": {
+              "link": {
+                "path": "/docs/intro",
+                "label": "intro"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

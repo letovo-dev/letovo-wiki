@@ -1,0 +1,24 @@
+{
+  "id": "Общественные движения/Ну движение",
+  "title": "Ну движение",
+  "description": "И движение",
+  "source": "@site/docs/Общественные движения/Ну движение.md",
+  "sourceDirName": "Общественные движения",
+  "slug": "/Общественные движения/Ну движение",
+  "permalink": "/docs/Общественные движения/Ну движение",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/Общественные движения/Ну движение.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Climawise",
+    "permalink": "/docs/Корпорации/Climawise"
+  },
+  "next": {
+    "title": "Свободная наука",
+    "permalink": "/docs/Общественные движения/Свободная наука"
+  }
+}
