@@ -1,39 +1,47 @@
 #include "assist_funcs.h"
+#include <iostream>
 
 std::unordered_map<std::string, std::any> parse_page_content(rapidjson::Document& new_body) {
     std::unordered_map<std::string, std::any> new_map;
     if(new_body.HasMember("author")) {
-        new_map["author"] = new_body["author"].GetString();
+        std::string author = new_body["author"].GetString();
+        new_map["author"] = std::any(author);
     } else {
-        new_map["author"] = "";
+        new_map["author"] = std::any("");
     }
     if(new_body.HasMember("is_secret") && new_body["is_secret"].GetBool()) {
-        new_map["is_secret"] = true;
+        new_map["is_secret"] = std::any(true);
     } else {
-        new_map["is_secret"] = false;
+        new_map["is_secret"] = std::any(false);
     }
     if(new_body.HasMember("is_published") && new_body["is_published"].GetBool()) {
-        new_map["is_published"] = true;
+        new_map["is_published"] = std::any(true);
     } else {
-        new_map["is_published"] = false;
+        new_map["is_published"] = std::any(false);
     }
     if(new_body.HasMember("post_path")) {
-        new_map["post_path"] = new_body["post_path"].GetString();
+        std::string post_path = new_body["post_path"].GetString();
+        new_map["post_path"] = std::any(post_path);
     } else {
         return {};
     }
     if(new_body.HasMember("likes")) {
-        new_map["likes"] = new_body["likes"].GetInt();
+        int likes = new_body["likes"].GetInt();
+        new_map["likes"] = std::any(likes);
     } else {
-        new_map["likes"] = 0;
+        new_map["likes"] = std::any(0);
     }
     if(new_body.HasMember("text")) {
-        new_map["text"] = new_body["text"].GetString();
+        std::string text = new_body["text"].GetString();
+        new_map["text"] = std::any(text);
     } else {
-        new_map["text"] = "";
+        return {};
     }
-    if(new_body.HasMember("id")) {
-        new_map["id"] = new_body["id"].GetInt();
+    if(new_body.HasMember("title")) {
+        std::string title = new_body["title"].GetString();
+        new_map["title"] = std::any(title);
+    } else {
+        new_map["title"] = std::any("");
     }
     return new_map;
 }
