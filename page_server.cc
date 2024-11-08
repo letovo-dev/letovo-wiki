@@ -1,36 +1,45 @@
 #include "page_server.h"
 
 void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-    router.get()->http_get("/page", [pool_ptr, logger_ptr](auto req, auto) {
+    router.get()->http_get(R"(/page/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto params) {
         std::string endpoint = req->remote_endpoint().address().to_string();
+        auto qrl = req->header().path();
 
-        logger_ptr->info( [endpoint]{return fmt::format("page request from {}", endpoint);});
+        std::cout<<"qrl: "<<qrl<<std::endl;
 
-        rapidjson::Document new_body;
-        new_body.Parse(req->body().c_str());
-
-        if (new_body.HasMember("postid")) {
-            int postid = new_body["postid"].GetInt();
-
-            cp::query get_page("SELECT * FROM \"posts\" WHERE \"post_id\"=($1);");
-
-            auto tx = cp::tx(*pool_ptr, get_page);
-
-            pqxx::result result = get_page(postid);
-            if (result[0]["is_secret"].as<bool>() == true, result[0]["is_published"].as<bool>() == false) {
-                logger_ptr->info( [endpoint]{return fmt::format("page request from {} is secret", endpoint);});
-                return req->create_response(restinio::status_non_authoritative_information()).done();
-            }
-
-            if(result.empty()) {
-                return req->create_response(restinio::status_bad_gateway()).done();
-            }
-
-            return req->create_response().set_body(cp::serialize(result)).done();
+        std::regex regex(R"(\d+)");
+        std::smatch match;
+        std::string url = {qrl.begin(), qrl.end()};
+        std::cout<<"url: "<<url<<std::endl;
+        int postid = 0, i = 0;
+        while (std::regex_search(url, match, regex)) {
+            std::cout<<"match: "<<match.str()<< ' '<<std::stoi(match.str())<<std::endl;
+            postid += (std::stoi(match.str()));
+            url = match.suffix().str();
         }
-        else {
+        std::cout<<"postid: "<<postid<<std::endl;
+
+        if (postid <= 0) {
+            return req->create_response(restinio::status_bad_request()).done();
+        }
+
+        cp::query get_page("SELECT * FROM \"posts\" WHERE \"post_id\"=($1);");
+
+        auto tx = cp::tx(*pool_ptr, get_page);
+
+        pqxx::result result = get_page(postid);
+        if (result[0]["is_secret"].as<bool>() == true, result[0]["is_published"].as<bool>() == false) {
+            logger_ptr->info( [endpoint]{return fmt::format("page request from {} is secret", endpoint);});
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
+        std::cout<<"result: "<<result[0]["post_path"].as<std::string>()<<std::endl;
+
+        if(result.empty()) {
+            return req->create_response(restinio::status_bad_gateway()).done();
+        }
+
+        return req->create_response().set_body(cp::serialize(result)).done();
+        
     });
 }
 

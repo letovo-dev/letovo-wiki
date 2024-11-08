@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blog Post</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #fff;
+        }
+        .post-container {
+            max-width: 600px;
+            margin: auto;
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .author {
+            font-weight: bold;
+            color: #29d88d;
+            margin-bottom: 10px;
+        }
+        .text {
+            font-size: 1.1rem;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="post-container" id="post">
+        <div class="author" id="postAuthor"></div>
+        <div class="text" id="postText"></div>
+    </div>
+
+    <script>
+        // Set a pageId in localStorage if it doesn't already exist
+        if (!localStorage.getItem('pageId')) {
+            localStorage.setItem('pageId', 1); // You can set this to any unique identifier for the page
+        }
+
+        // Function to fetch and display post data
+        async function fetchAndDisplayPost() {
+            const pageId = localStorage.getItem('pageId'); // Retrieve pageId from localStorage
+
+            try {
+                // Fetch data from the server, passing the pageId in the request body
+                const response = await fetch('0.0.0.0:8080/page/1', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                // Populate the post content
+                document.getElementById('postAuthor').textContent = data.author;
+                document.getElementById('postText').textContent = data.text;
+
+            } catch (error) {
+                console.error('Error fetching post data:', error);
+            }
+        }
+
+        // Fetch and display the post when the page loads
+        fetchAndDisplayPost();
+    </script>
+</body>
+</html>
