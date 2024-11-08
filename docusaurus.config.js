@@ -10,7 +10,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 const config = {
   title: 'Демо вики',
   tagline: 'Шаблон клевой вики',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo2.ico',
 
   // Set the production url of your site here
   url: 'https://your-docusaurus-site.example.com',
@@ -72,12 +72,12 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/docusaurus-social-card.jpg',
+      image: 'img/logo2.jpg',
       navbar: {
         title: 'Шаблон вики',
         logo: {
           alt: 'Шаблон вики Logo',
-          src: 'img/logo.svg',
+          src: 'img/logo2.jpg',
         },
         items: [
           {
@@ -140,8 +140,8 @@ const config = {
         // copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
       },
       prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
+        theme: prismThemes.dracula,
+        darkTheme: prismThemes.synthwave84,
       },
     }),
 };

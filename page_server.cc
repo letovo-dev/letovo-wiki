@@ -5,19 +5,7 @@ void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& rou
         std::string endpoint = req->remote_endpoint().address().to_string();
         auto qrl = req->header().path();
 
-        std::cout<<"qrl: "<<qrl<<std::endl;
-
-        std::regex regex(R"(\d+)");
-        std::smatch match;
-        std::string url = {qrl.begin(), qrl.end()};
-        std::cout<<"url: "<<url<<std::endl;
-        int postid = 0, i = 0;
-        while (std::regex_search(url, match, regex)) {
-            std::cout<<"match: "<<match.str()<< ' '<<std::stoi(match.str())<<std::endl;
-            postid += (std::stoi(match.str()));
-            url = match.suffix().str();
-        }
-        std::cout<<"postid: "<<postid<<std::endl;
+        int postid = int_from_url_path(qrl);
 
         if (postid <= 0) {
             return req->create_response(restinio::status_bad_request()).done();
@@ -32,7 +20,6 @@ void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& rou
             logger_ptr->info( [endpoint]{return fmt::format("page request from {} is secret", endpoint);});
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
-        std::cout<<"result: "<<result[0]["post_path"].as<std::string>()<<std::endl;
 
         if(result.empty()) {
             return req->create_response(restinio::status_bad_gateway()).done();
@@ -46,6 +33,10 @@ void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& rou
 void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_post("/add_page_content", [pool_ptr, logger_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
+
+        if(!is_authed_by_body(req->body(), pool_ptr)) {
+            return req->create_response(restinio::status_unauthorized()).done();
+        }
 
         logger_ptr->info( [endpoint]{return fmt::format("page request from {}", endpoint);});
 
@@ -100,6 +91,10 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
 
 void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_post("/add_page", [pool_ptr, logger_ptr](auto req, auto) {
+        if(!is_authed_by_body(req->body(), pool_ptr)) {
+            return req->create_response(restinio::status_unauthorized()).done();
+        }
+
         std::string endpoint = req->remote_endpoint().address().to_string();
 
         logger_ptr->info( [endpoint]{return fmt::format("page request from {}", endpoint);});
@@ -122,6 +117,32 @@ void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& rou
             logger_ptr->info( [endpoint, path]{return fmt::format("page added from {} to {}", endpoint, path);});
             create_file(path, new_body["text"].GetString(), logger_ptr);
             return req->create_response(restinio::status_accepted()).done();
+        }
+        else return req->create_response(restinio::status_non_authoritative_information()).done();
+    });
+}
+
+void update_likes(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    router.get()->http_put("/update_likes", [pool_ptr, logger_ptr](auto req, auto) {
+        if(!is_authed_by_body(req->body(), pool_ptr)) {
+            return req->create_response(restinio::status_unauthorized()).done();
+        }
+        std::string endpoint = req->remote_endpoint().address().to_string();
+
+        logger_ptr->info( [endpoint]{return fmt::format("page request from {}", endpoint);});
+
+        rapidjson::Document new_body;
+        new_body.Parse(req->body().c_str());
+
+        if (new_body.HasMember("post_id") && new_body.HasMember("likes")) {
+            cp::query update_likes("UPDATE \"posts\" SET \"likes\"=($1) WHERE \"post_id\"=($2);");
+
+            auto tx = cp::tx(*pool_ptr, update_likes);
+
+            pqxx::result res = update_likes(new_body["likes"].GetInt(), new_body["post_id"].GetInt());
+            tx.commit();
+            logger_ptr->info( [endpoint, likes = new_body["likes"].GetInt()]{return fmt::format("likes updated to {} from {}", likes, endpoint);});
+            return req->create_response().done();
         }
         else return req->create_response(restinio::status_non_authoritative_information()).done();
     });

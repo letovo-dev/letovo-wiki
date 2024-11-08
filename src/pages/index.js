@@ -38,6 +38,8 @@ export default function Home() {
       <main>
         <HomepageFeatures />
       </main>
+      <div className="text--center">чекните канал, кстати, мемы оттуда: https://t.me/rat_gathering</div>
+      <div> </div>
     </Layout>
   );
 }
