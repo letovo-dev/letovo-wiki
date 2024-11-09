@@ -5,7 +5,7 @@ void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& rou
         std::string endpoint = req->remote_endpoint().address().to_string();
         auto qrl = req->header().path();
 
-        int postid = int_from_url_path(qrl);
+        int postid = url::int_from_url_path(qrl);
 
         if (postid <= 0) {
             return req->create_response(restinio::status_bad_request()).done();
@@ -34,7 +34,7 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
     router.get()->http_post("/add_page_content", [pool_ptr, logger_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
 
-        if(!is_authed_by_body(req->body(), pool_ptr)) {
+        if(!auth::is_authed_by_body(req->body(), pool_ptr)) {
             return req->create_response(restinio::status_unauthorized()).done();
         }
 
@@ -43,7 +43,7 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
         rapidjson::Document new_body;
         new_body.Parse(req->body().c_str());
 
-        std::unordered_map<std::string, std::any> new_map = parse_page_content(new_body);
+        std::unordered_map<std::string, std::any> new_map = assist::parse_page_content(new_body);
 
         if (!new_map.empty()) {
             std::string path = std::any_cast<std::string>(new_map["post_path"]); 
@@ -63,6 +63,7 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
                         std::any_cast<std::string>(new_map["title"]), 
                         std::any_cast<std::string>(new_map["author"]), 
                         std::any_cast<std::string>(new_map["text"]));
+                        tx.commit();
             } catch (pqxx::sql_error& e) {
                 logger_ptr->error( [endpoint]{return fmt::format("sql error from {}", endpoint);});
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -75,12 +76,12 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
             logger_ptr->info( [post_id]{return fmt::format("page added with id {}", post_id);});
             try {
                 std::filesystem::copy_file(std::filesystem::current_path() / std::filesystem::path("letovo-wiki/blank_page.html"), path, std::filesystem::copy_options::overwrite_existing);
-                add_id_to_page(path, post_id, logger_ptr);
+                assist::add_id_to_page(path, post_id, logger_ptr);
             } catch (std::filesystem::filesystem_error& e) {
                 logger_ptr->error( [endpoint, path, e]{return fmt::format("path error {} with path {}, {}", endpoint, path, e.what());});
                 return req->create_response(restinio::status_bad_request()).done();
             }
-            return req->create_response().done();
+            return req->create_response().set_body(cp::serialize(res)).done();
         }
         else {
             logger_ptr->info( [endpoint]{return fmt::format("bad request from {}, not enough args", endpoint);});
@@ -91,7 +92,7 @@ void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& 
 
 void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_post("/add_page", [pool_ptr, logger_ptr](auto req, auto) {
-        if(!is_authed_by_body(req->body(), pool_ptr)) {
+        if(!auth::is_authed_by_body(req->body(), pool_ptr)) {
             return req->create_response(restinio::status_unauthorized()).done();
         }
 
@@ -115,8 +116,9 @@ void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& rou
             pqxx::result res = add_page(path);
             int post_id = res[0]["post_id"].as<int>();
             logger_ptr->info( [endpoint, path]{return fmt::format("page added from {} to {}", endpoint, path);});
-            create_file(path, new_body["text"].GetString(), logger_ptr);
-            return req->create_response(restinio::status_accepted()).done();
+            assist::create_file(path, new_body["text"].GetString(), logger_ptr);
+            return req->create_response().set_body(cp::serialize(res)).done();
+
         }
         else return req->create_response(restinio::status_non_authoritative_information()).done();
     });
@@ -124,7 +126,7 @@ void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& rou
 
 void update_likes(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_put("/update_likes", [pool_ptr, logger_ptr](auto req, auto) {
-        if(!is_authed_by_body(req->body(), pool_ptr)) {
+        if(!auth::is_authed_by_body(req->body(), pool_ptr)) {
             return req->create_response(restinio::status_unauthorized()).done();
         }
         std::string endpoint = req->remote_endpoint().address().to_string();
