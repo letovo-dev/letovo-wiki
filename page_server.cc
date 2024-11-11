@@ -30,6 +30,31 @@ namespace page {
         });
     }
 
+    void get_page_author(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/post/author/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            std::string endpoint = req->remote_endpoint().address().to_string();
+            auto qrl = req->header().path();
+
+            std::string username = url::get_last_url_arg(qrl);
+
+            if(username == "author" || username.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            cp::query get_page("SELECT \"username\", \"avatar_pic\" from \"user\" WHERE \"username\"=($1);");
+
+            auto tx = cp::tx(*pool_ptr, get_page);
+
+            pqxx::result result = get_page(username);
+            
+            if(result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(cp::serialize(result)).done();
+            
+        });
+    }
+
     void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/post/add_page_content", [pool_ptr, logger_ptr](auto req, auto) {
             std::string endpoint = req->remote_endpoint().address().to_string();
@@ -74,13 +99,10 @@ namespace page {
                 int post_id = res[0]["post_id"].as<int>();
                 
                 logger_ptr->info( [post_id]{return fmt::format("page added with id {}", post_id);});
-                try {
-                    std::filesystem::copy_file(std::filesystem::current_path() / std::filesystem::path("letovo-wiki/blank_page.html"), path, std::filesystem::copy_options::overwrite_existing);
-                    assist::add_id_to_page(path, post_id, logger_ptr);
-                } catch (std::filesystem::filesystem_error& e) {
-                    logger_ptr->error( [endpoint, path, e]{return fmt::format("path error {} with path {}, {}", endpoint, path, e.what());});
-                    return req->create_response(restinio::status_bad_request()).done();
-                }
+                if (new_map["author"].has_value()) 
+                    assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::any_cast<std::string>(new_map["author"]), std::to_string(post_id), logger_ptr);
+                else 
+                    assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::to_string(post_id), logger_ptr);
                 return req->create_response().set_body(cp::serialize(res)).done();
             }
             else {

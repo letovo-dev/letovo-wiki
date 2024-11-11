@@ -1,0 +1,54 @@
+import { useState, useEffect } from "react";
+import { AuthorCard } from '../src/AuthorCard';
+
+# 
+
+export const AuthorCardElement = () => {
+  const [pokemon, setPokemon] = useState(null);
+  useEffect(() => {
+    const fetchPokemon = () => {
+        fetch('/api/page/author/1', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+        .then((result) => result.json())
+        .then((data) => setPokemon(data));
+    };
+    fetchPokemon();
+  }, []);
+  if (!pokemon) {
+    return <h1>Загрузка...</h1>;
+  }
+    return <AuthorCard 
+    name={JSON.stringify(pokemon["result"][0]["username"])}
+    ava={JSON.stringify(pokemon["result"][0]["avatar"])}
+    authorLink={"/user/page/" + JSON.stringify(pokemon["result"][0]["username"])} 
+    />
+};
+
+export const PokemonData = () => {
+  const [pokemon, setPokemon] = useState(null);
+  useEffect(() => {
+    const fetchPokemon = () => {
+        fetch('/api/post/1', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+        .then((result) => result.json())
+        .then((data) => setPokemon(data));
+    };
+    fetchPokemon();
+  }, []);
+  if (!pokemon) {
+    return <h1>Загрузка...</h1>;
+  }
+  return <pre>{JSON.stringify(pokemon["result"][0]["text"], null, 2).slice(1, -1)}</pre>;
+};
+
+<AuthorCard />
+
+<PokemonData />
