@@ -239,7 +239,7 @@ namespace page {
             logger_ptr->info( [username]{return fmt::format("add favourite post from {}", username);});
 
             if (new_body.HasMember("post_id")) {
-                cp::query add_page("INSERT INTO \"favourite_posts\" (\"post_id\", \"username\") VALUES ($1, $2);");
+                cp::query add_page("INSERT INTO \"favourite_posts\" (\"post_id\", \"username\") VALUES ($1, $2) ON CONFLICT (\"post_id\", \"username\") DO NOTHING;");
                 try {
                     auto tx = cp::tx(*pool_ptr, add_page);
 
