@@ -1,5 +1,5 @@
 #include "page_server.h"
-namespace page {
+namespace page::server {
     void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/post/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto params) {
             std::string endpoint = req->remote_endpoint().address().to_string();
