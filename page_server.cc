@@ -1,6 +1,6 @@
 #include "page_server.h"
 namespace page::server {
-    void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void get_page_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/post/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto params) {
             std::string endpoint = req->remote_endpoint().address().to_string();
             auto qrl = req->header().path();
@@ -30,7 +30,7 @@ namespace page::server {
         });
     }
 
-    void get_page_author(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void get_page_author(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/post/author/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             std::string endpoint = req->remote_endpoint().address().to_string();
             auto qrl = req->header().path();
@@ -55,7 +55,7 @@ namespace page::server {
         });
     }
 
-    void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void add_page_by_content(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/post/add_page_content", [pool_ptr, logger_ptr](auto req, auto) {
             std::string endpoint = req->remote_endpoint().address().to_string();
 
@@ -112,7 +112,7 @@ namespace page::server {
         });
     }
 
-    void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void add_page_by_page(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/post/add_page", [pool_ptr, logger_ptr](auto req, auto) {
             if(!auth::is_authed_by_body(req->body(), pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
@@ -146,7 +146,7 @@ namespace page::server {
         });
     }
 
-    void update_likes(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void update_likes(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/post/update_likes", [pool_ptr, logger_ptr](auto req, auto) {
             if(!auth::is_authed_by_body(req->body(), pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
@@ -172,7 +172,7 @@ namespace page::server {
         });
     }
 
-    void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_delete(R"(/post/delete/:token([a-zA-Z0-9]+)/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::vector<std::string> url_parts = url::spilt_url_path(req->header().path(), "/");
 
@@ -197,7 +197,7 @@ namespace page::server {
     }
 
 
-    void get_favourite_posts(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void get_favourite_posts(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/post/favourite/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             std::string token = url::get_last_url_arg(req->header().path());    
 
@@ -222,7 +222,7 @@ namespace page::server {
         });
     }
 
-    void post_add_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void post_add_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/post/favourite", [pool_ptr, logger_ptr](auto req, auto) {
             std::string endpoint = req->remote_endpoint().address().to_string();
 
@@ -260,7 +260,7 @@ namespace page::server {
         });
     }
 
-    void delete_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void delete_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_delete(R"(/post/favourite/:token([a-zA-Z0-9]+)/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::vector<std::string> url_parts = url::spilt_url_path(req->header().path(), "/");
 
