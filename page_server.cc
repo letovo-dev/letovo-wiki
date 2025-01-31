@@ -229,11 +229,14 @@ namespace page::server {
     }
 
     void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_delete(R"(/post/delete/:token([a-zA-Z0-9]+)/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
-            std::vector<std::string> url_parts = url::spilt_url_path(req->header().path(), "/");
-
-            std::string token = url_parts[3];
-            int post_id = std::stoi(url_parts[4]);
+        router.get()->http_delete(R"(/post/delete/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+            int post_id = std::stoi(url::get_last_url_arg(req->header().path()));
 
             if(token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -251,9 +254,13 @@ namespace page::server {
 
 
     void get_favourite_posts(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/post/favourite/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
-            std::string token = url::get_last_url_arg(req->header().path());    
-
+        router.get()->http_get("/post/favourite/", [pool_ptr, logger_ptr](auto req, auto params) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
             std::string username = auth::get_username(token, pool_ptr);
             if(username == "") {
                 return req->create_response(restinio::status_unauthorized()).done();
@@ -278,7 +285,12 @@ namespace page::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            std::string token = new_body["token"].GetString();
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
             std::string username = auth::get_username(token, pool_ptr);
 
             if(username == "") {
@@ -305,11 +317,11 @@ namespace page::server {
     }
 
     void delete_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_delete(R"(/post/favourite/:token([a-zA-Z0-9]+)/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_delete(R"(/post/favourite/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::vector<std::string> url_parts = url::spilt_url_path(req->header().path(), "/");
 
             std::string token = url_parts[3];
-            int post_id = std::stoi(url_parts[4]);
+            int post_id = std::stoi(url::get_last_url_arg(req->header().path()));
 
             if(token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
